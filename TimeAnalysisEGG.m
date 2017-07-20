@@ -1,13 +1,18 @@
+clearvars -except data fs
 %Extracts and graphs pieces of the EGG filter signal
 %use this to find important features from the EGGfilt data.
 %load the data first then change the variable name.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%  Graph the EGG and DEGG Signals %%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 x1 = linspace(1,2921,2921); %range of data points to plot
 x1 = x1 * (1/fs); %change to time scale
 figure
 subplot(2,1,1);
 plot(x1,data(10480:13400));
 dataextract = data(10480:13400);
-title('EGG signal of the word "When the" at 2km/h speed ');
+title('EGG signal');
 xlabel('Time (s)');
 ylabel('Amplitude (VFCA)');
 domainRange = size(x1)*(1/fs);
@@ -21,14 +26,15 @@ subplot(2,1,2);
 x1 = linspace(1,2920,2920);
 x1 = x1 * (1/fs); %change to time scale
 plot((x1),datadiff);
+title('DEGG Signal (Derivative of EGG)');
+xlabel('Time (s)');
+ylabel('Amplitude (VFCA)');
 xlim([0 domainRange(1,2)]) %change domain
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%   Finding general parameters i.e. max, min , period, freq   %%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
 %Finding the index of the maximum gradient 
 max = 0;
 index = 1;
@@ -136,69 +142,26 @@ else
      criterionLevel = (dataextract(index-1,1) + abs(minRange)) / (abs(minRange)+abs(maxRange));
 end
 
-GCQIndex = 1; 
-startingFlag = 0;
-maxMinFlag = 0; %max = 0, min = 1
-startingIt = 0;
-GCQmax = 0;
-GCQmin = 0;
-GCQmaxI = 0;
-GCQminI = 0;
-firstCrit = 0;
-secondCrit = 0;
+%calculate the criterion level threshold
+criterionThreshold = ((abs(minRange)+abs(maxRange))*criterionLevel)+minRange; 
 
+critCount = 0;
+GCQIndex = 1;
+i = 2;
+[c,d] = size(datadiff);
 
-for i = 1:size(dataextract)
-    
-    %calculate the criterion level threshold
-    criterionThreshold = ((abs(minRange)+abs(maxRange))*criterionLevel)+minRange; 
+while i < c
     
     if dataextract(i,1) >= criterionThreshold
-        
+        critCount = critCount + 1;
     end
     
+    if (dataextract(i-1,1) >= criterionThreshold) && (dataextract(i,1) <= criterionThreshold)
+        GCQValues(GCQIndex,1) = critCount / iterPeriod;
+        GCQIndex = GCQIndex + 1;
+        critCount = 0;
+        i = i + 2;
+    end
     
-    
-    %%TEMP CODE%%
-        
-%     if i == startingIt + floor(iterPeriod/2)
-%         startingIt = i;
-%         if maxMinFlag == 0 %max->min
-%             maxMinFlag = 1;
-%         else %min->max
-%             startingITS(o,1) = startingIt;
-%         o = o + 1;
-%             %calculate the criterion level intersections
-%             flagCrit = 0;
-%             p1 = GCQmax
-%             p2 = GCQmin
-%             criterionThreshold = ((GCQmax-GCQmin)*criterionLevel)+GCQmin; 
-%             j = (i-(iterPeriod+floor(iterPeriod/2)));
-%             while j <= i
-%                 if (dataextract(j,1) >= (criterionThreshold - 0.003)) && dataextract(j,1) <= (criterionThreshold + 0.003)
-%                     if flagCrit == 0
-%                         firstCrit = j;
-%                         flagCrit = 1;
-%                     else 
-%                         secondCrit = j;
-%                     end
-%                     j = j + 4;
-%                 end
-%                 j = j + 1;
-%             end
-%             GCQmax = 0;
-%             GCQmin = 0;
-%             maxMinFlag = 0;
-%             if secondCrit > firstCrit    
-%                 GCQValues(GCQIndex,1) = (iterPeriod - (secondCrit - firstCrit)) / (iterPeriod);
-%             else
-%                 GCQValues(GCQIndex,1) = (iterPeriod - (firstCrit - secondCrit)) / (iterPeriod);
-%             end
-%             GCQIndex = GCQIndex + 1;
-%         end
-%     end    
-
-     
+    i = i + 1;
 end
-
-
